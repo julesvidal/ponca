@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <iostream>
 #include "kdTreeQuery.h"
 #include "../../query.h"
 #include "../Iterator/kdTreeRangeIterator.h"
@@ -50,9 +51,13 @@ protected:
         const auto& points  = QueryAccelType::m_kdtree->points();
         const auto& indices = QueryAccelType::m_kdtree->samples();
         const auto& point   = QueryType::getInputPosition(points);
+        // if(DataPoint::Dim==5){
+        //   std::cout<<" input position "<<point<<std::endl;
+        // }
 
         if (points.empty() || indices.empty())
         {
+          // std::cout<<" emtpy return "<<std::endl;
             it = end();
             return;
         }
@@ -65,6 +70,9 @@ protected:
             it.m_start = i+1;
             return true;
         };
+        // if(DataPoint::Dim==5){
+        //   std::cout<<" there 1 "<<std::endl;
+        // }
 
         for(IndexType i=it.m_start; i<it.m_end; ++i)
         {
@@ -77,6 +85,9 @@ protected:
                 if( processNeighborFunctor(idx, i, d) ) return;
             }
         }
+        // if(DataPoint::Dim==5){
+        //   std::cout<<" there 2 "<<std::endl;
+        // }
 
         if (KdTreeQuery<Traits>::search_internal(point,
                                                  [&it](IndexType start, IndexType end)
@@ -88,6 +99,10 @@ protected:
                                                  skipFunctor,
                                                  processNeighborFunctor))
             it.m_index = static_cast<IndexType>(points.size());
+
+        // if(DataPoint::Dim==5){
+        //   std::cout<<" there 3 "<<std::endl;
+        // }
     }
 };
 

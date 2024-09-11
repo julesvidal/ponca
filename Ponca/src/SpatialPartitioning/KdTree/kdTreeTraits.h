@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../../Common/Macro.h"
+#include <iostream>
 
 #include <cstddef>
 
@@ -72,6 +73,10 @@ public:
     Scalar split_value{0};
     UIndex first_child_id : INDEX_BITS;
     UIndex split_dim : DIM_BITS;
+
+    // KdTreeDefaultInnerNode(KdTreeDefaultInnerNode&&) { std::cout<<"INNER MOVE"<<std::endl;};
+    // KdTreeDefaultInnerNode(const &KdTreeDefaultInnerNode) { std::cout<<"INNER COPY"<<std::endl;};
+
 };
 
 template <typename Index, typename Size>
