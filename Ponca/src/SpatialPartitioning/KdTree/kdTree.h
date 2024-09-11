@@ -302,7 +302,7 @@ protected:
     NodeIndexType m_leaf_count {0}; ///< Number of leaves in the Kdtree (computed during construction)
 
     // Internal ----------------------------------------------------------------
-protected:
+public:
     inline KdTreeBase() = default;
 
     /// Generate a tree sampled from a custom contained type converted using a `Converter`

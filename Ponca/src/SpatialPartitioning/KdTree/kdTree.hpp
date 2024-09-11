@@ -130,47 +130,153 @@ inline void KdTreeBase<Traits>::buildWithSampling(PointUserContainer&& points,
 
     m_nodes = NodeContainer();
     m_nodes.reserve(4 * point_count() / m_min_cell_size);
+
+        // if(DataPoint::Dim==5){
+        //   std::cout<<"m_nodes reserve "<<4 * point_count() / m_min_cell_size<<" "<<point_count()<<" "<<m_min_cell_size<<std::endl;
+        // }
     m_nodes.emplace_back();
 
     m_indices = std::move(sampling);
 
+    
+    // if(DataPoint::Dim==5){
+    //   std::cout<<"build with sampling"<<std::endl;
+    //   std::cout<<"sample count"<<sample_count()<<std::endl;
+    //   std::cout<<"point count"<<point_count()<<std::endl;
+    // }
+
     this->build_rec(0, 0, sample_count(), 1);
 
+    if(DataPoint::Dim==5){
+      // std::cout<<"kd tree check nodes"<<std::endl;
+      // std::cout<<m_nodes.size()<<" nodes"<<std::endl;
+      for(int inode=0; inode<m_nodes.size(); inode++){
+        auto& node = m_nodes[inode];
+        // std::cout<<" node "<<inode<<" "<<node.is_leaf()<<" "<<node.inner_first_child_id() \
+          <<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+      }
+    }
     PONCA_DEBUG_ASSERT(this->valid());
+
 }
 
 template<typename Traits>
 void KdTreeBase<Traits>::build_rec(NodeIndexType node_id, IndexType start, IndexType end, int level)
 {
+            if(DataPoint::Dim==5){
+  // std::cout<<" node id "<<node_id<<" "<<&m_nodes[node_id]<<std::endl;
+            }
+  if(node_id>m_nodes.size() or node_id<0){
+    std::cout<<"ERROR NODE ID "<<node_id<<" outta "<<m_nodes.size()<<std::endl;
+  }
     NodeType& node = m_nodes[node_id];
     AabbType aabb;
-    for(IndexType i=start; i<end; ++i)
+    for(IndexType i=start; i<end; ++i){
         aabb.extend(m_points[m_indices[i]].pos());
+            if(DataPoint::Dim==5){
+              // std::cout<<" aabb "<<aabb.dim()<<" "<<aabb.volume()<<std::endl;
+            }
+    }
 
-    node.set_is_leaf(
+    m_nodes[node_id].set_is_leaf(
         end-start <= m_min_cell_size ||
         level >= Traits::MAX_DEPTH ||
         // Since we add 2 nodes per inner node we need to stop if we can't add
         // them both
-        (NodeIndexType)m_nodes.size() > MAX_NODE_COUNT - 2);
+        (NodeIndexType)m_nodes.size() > MAX_NODE_COUNT - 2 ||
+        aabb.min().isApprox(aabb.max()));
 
-    node.configure_range(start, end-start, aabb);
-    if (node.is_leaf())
+    m_nodes[node_id].configure_range(start, end-start, aabb);
+            // if(DataPoint::Dim==5){
+          // std::cout<<"  build node "<<std::endl;
+        // }
+
+    if (m_nodes[node_id].is_leaf())
     {
+            // if(DataPoint::Dim==5){
+            //   auto& node2 = m_nodes[node_id];
+          // std::cout<<"  build leaf node "<<node_id<<" "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+        // }
         ++m_leaf_count;
     }
     else
     {
         int split_dim = 0;
         (Scalar(0.5) * aabb.diagonal()).maxCoeff(&split_dim);
-        node.configure_inner(aabb.center()[split_dim], m_nodes.size(), split_dim);
+        m_nodes[node_id].configure_inner(aabb.center()[split_dim], m_nodes.size(), split_dim);
+
+        auto first_child_id = m_nodes[node_id].inner_first_child_id();
+        auto split_value = m_nodes[node_id].inner_split_value();
+            // if(DataPoint::Dim==5){
+            //   auto& node2 = m_nodes[node_id];
+          // std::cout<<"  build inner node "<<node_id<<" "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+          // std::cout<<"  build inner node2 "<<node_id<<" "<<node.is_leaf()<<" "<<node.inner_first_child_id()<<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+          // std::cout<<"  build inner node3 "<<node_id<<" "<<m_nodes[node_id].is_leaf()<<" "<<m_nodes[node_id].inner_first_child_id()<<" "<<m_nodes[node_id].inner_split_value()<<" "<<m_nodes[node_id].inner_split_dim()<<std::endl;
+          // std::cout<<" node id "<<node_id<<" adress "<<&m_nodes[node_id]<<std::endl;
+          // std::cout<<" aabb "<<aabb.diagonal().norm()<<std::endl;
+        // }
+        // if(DataPoint::Dim==5){
+        // std::cout<<" size-cap "<<m_nodes.capacity()-m_nodes.size()<<std::endl;
+        // std::cout<<"m_nodes size"<<node_count()<<std::endl;
+        // }
         m_nodes.emplace_back();
         m_nodes.emplace_back();
 
-        IndexType mid_id = this->partition(start, end, split_dim, node.inner_split_value());
-        build_rec(node.inner_first_child_id(), start, mid_id, level+1);
-        build_rec(node.inner_first_child_id()+1, mid_id, end, level+1);
+            // if(DataPoint::Dim==5){
+            //   auto& node2 = m_nodes[node_id];
+          // std::cout<<"       inner node "<<node_id<<" has changed to  "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+          // std::cout<<"       inner node2 "<<node_id<<" has changed to  "<<node.is_leaf()<<" "<<node.inner_first_child_id()<<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+          // std::cout<<"       inner node3 "<<node_id<<" has changed to  "<<m_nodes[node_id].is_leaf()<<" "<<m_nodes[node_id].inner_first_child_id()<<" "<<m_nodes[node_id].inner_split_value()<<" "<<m_nodes[node_id].inner_split_dim()<<std::endl;
+          // std::cout<<" node id "<<node_id<<" adress "<<&m_nodes[node_id]<<std::endl;
+        // }
+
+        IndexType mid_id = this->partition(start, end, split_dim, m_nodes[node_id].inner_split_value());
+        // if(DataPoint::Dim==5){
+        //   std::cout<<"  mid_id "<<mid_id<<std::endl;
+        //   auto& node2 = m_nodes[node_id];
+        //   std::cout<<"       inner node "<<node_id<<" has now changed to  "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+        //   std::cout<<"       inner node2 "<<node_id<<" has now changed to  "<<node.is_leaf()<<" "<<node.inner_first_child_id()<<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+        //   std::cout<<"       inner node3 "<<node_id<<" has now changed to  "<<m_nodes[node_id].is_leaf()<<" "<<m_nodes[node_id].inner_first_child_id()<<" "<<m_nodes[node_id].inner_split_value()<<" "<<m_nodes[node_id].inner_split_dim()<<std::endl;
+        //   std::cout<<" node id "<<node_id<<" adress "<<&m_nodes[node_id]<<std::endl;
+        // }
+        // if(DataPoint::Dim==5){
+        //   std::cout<<" recursive call "<<node_id<<" with "<<first_child_id<<std::endl;
+        // }
+        build_rec(first_child_id, start, mid_id, level+1);
+        // if(DataPoint::Dim==5){
+        //   std::cout<<"  mid_id "<<mid_id<<std::endl;
+        //   auto& node2 = m_nodes[node_id];
+        //   std::cout<<"       inner node "<<node_id<<" has now changed to  "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+        //   std::cout<<"       inner node2 "<<node_id<<" has now changed to  "<<node.is_leaf()<<" "<<node.inner_first_child_id()<<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+        //   std::cout<<"       inner node3 "<<node_id<<" has now changed to  "<<m_nodes[node_id].is_leaf()<<" "<<m_nodes[node_id].inner_first_child_id()<<" "<<m_nodes[node_id].inner_split_value()<<" "<<m_nodes[node_id].inner_split_dim()<<std::endl;
+        //   std::cout<<" node id "<<node_id<<" adress "<<&m_nodes[node_id]<<std::endl;
+        // }
+        // if(DataPoint::Dim==5){
+        //   std::cout<<" recursive call "<<node_id<<" with "<<first_child_id+1<<std::endl;
+        // }
+        build_rec(first_child_id+1, mid_id, end, level+1);
+            // if(DataPoint::Dim==5){
+            //   auto& node2 = m_nodes[node_id];
+          // std::cout<<"       inner node "<<node_id<<" is now  "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+          // std::cout<<"       inner node2 "<<node_id<<" is now  "<<node.is_leaf()<<" "<<node.inner_first_child_id()<<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+          // std::cout<<"       inner node3 "<<node_id<<" is now  "<<m_nodes[node_id].is_leaf()<<" "<<m_nodes[node_id].inner_first_child_id()<<" "<<m_nodes[node_id].inner_split_value()<<" "<<m_nodes[node_id].inner_split_dim()<<std::endl;
+          // std::cout<<" node id "<<node_id<<" adress "<<&m_nodes[node_id]<<std::endl;
+        // }
+        m_nodes[node_id].configure_inner(split_value, first_child_id, split_dim);
+        // m_nodes[node_id].inner_first_child_id()=first_child_id;
+        // m_nodes[node_id].inner_split_value()=first_child_id;
+        // m_nodes[node_id].inner_split_dim()=split_dim;
+            // if(DataPoint::Dim==5){
+            //   auto& node2 = m_nodes[node_id];
+          // std::cout<<"       inner node "<<node_id<<" is finally  "<<node2.is_leaf()<<" "<<node2.inner_first_child_id()<<" "<<node2.inner_split_value()<<" "<<node2.inner_split_dim()<<std::endl;
+          // std::cout<<"       inner node2 "<<node_id<<" is finally  "<<node.is_leaf()<<" "<<node.inner_first_child_id()<<" "<<node.inner_split_value()<<" "<<node.inner_split_dim()<<std::endl;
+          // std::cout<<"       inner node3 "<<node_id<<" is finally  "<<m_nodes[node_id].is_leaf()<<" "<<m_nodes[node_id].inner_first_child_id()<<" "<<m_nodes[node_id].inner_split_value()<<" "<<m_nodes[node_id].inner_split_dim()<<std::endl;
+          // std::cout<<" node id "<<node_id<<" adress "<<&m_nodes[node_id]<<std::endl;
+            // }
     }
+    // if(DataPoint::Dim==5){
+    //   std::cout<<"m_nodes size"<<node_count()<<std::endl;
+    // }
 }
 
 template<typename Traits>
