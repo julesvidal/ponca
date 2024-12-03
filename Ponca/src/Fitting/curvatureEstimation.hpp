@@ -4,8 +4,48 @@ NormalDerivativesCurvatureEstimator<DataPoint, _WFunctor, DiffType, T>::finalize
 {
     if (Base::finalize() == STABLE) {
         if (Base::curvatureEstimatorBase().isValid()) Base::m_eCurrentState = CONFLICT_ERROR_FOUND;
-        Base::m_eCurrentState = computeCurvature(false);
+        Base::m_eCurrentState = computeCurvature(true);
+        computeUq(true);
     }
+
+    return Base::m_eCurrentState;
+}
+
+template < class DataPoint, class _WFunctor, int DiffType, typename T>
+FIT_RESULT NormalDerivativesCurvatureEstimator<DataPoint, _WFunctor, DiffType, T>::computeUq(bool useNormal)
+{
+
+    Mat33 U = Mat33::Zero();
+    U.col(0)[0] = Base::kmin();
+    U.col(1)[1] = Base::kmax();
+    U.col(2)[2] = 1;
+
+
+    Mat33 R;
+    R.col(0) = Base::kminDirection();
+    R.col(1) = Base::kmaxDirection();
+    R.col(0).normalize();
+    R.col(1).normalize();
+    R.col(2) = R.col(0).cross(R.col(1));
+
+    VectorType n = Base::primitiveGradient();
+
+
+
+    if(R.col(1)[0] < 0){
+      R.col(1) = - R.col(1);
+      R.col(2) = - R.col(2);
+      // std::cout<<" flipping v1 "<<std::endl;
+    }
+    if(R.col(2).dot(n) < 0){
+      R.col(2) = - R.col(2);
+      R.col(0) = - R.col(0);
+      // std::cout<<" flipping v1 "<<std::endl;
+    }
+
+    U = R.transpose()*U*R;
+
+    Base::setUqValue(U);
 
     return Base::m_eCurrentState;
 }
@@ -46,6 +86,12 @@ FIT_RESULT NormalDerivativesCurvatureEstimator<DataPoint, _WFunctor, DiffType, T
 
     Base::setCurvatureValues(eig2.eigenvalues()(0), eig2.eigenvalues()(1),
                              B * eig2.eigenvectors().col(0), B * eig2.eigenvectors().col(1));
+
+    if(eig2.eigenvalues()(0) < 1e-5 and eig2.eigenvalues()(1) < 1e-5){
+      Base::setCurvatureValues(0,0, B.col(0), B.col(1));
+      // std::cout<<" min k"<<std::endl;
+
+    }
 
     return Base::m_eCurrentState;
 }

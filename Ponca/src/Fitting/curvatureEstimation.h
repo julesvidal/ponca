@@ -33,6 +33,7 @@ namespace Ponca
     private:
         typedef Eigen::Matrix<Scalar,3,2> Mat32; /*!< \brief Matrix type for tangent plane basis \fixme formalize tangent plane basis */
         typedef Eigen::Matrix<Scalar,2,2> Mat22; /*!< \brief Matrix type for shape operator */
+        typedef Eigen::Matrix<Scalar,3,3> Mat33; /*!< \brief Matrix type for Uq */
 
     public:
         PONCA_EXPLICIT_CAST_OPERATORS_DER(NormalDerivativesCurvatureEstimator,normalDerivativesCurvatureEstimator)
@@ -45,6 +46,7 @@ namespace Ponca
         //! \todo Add a way to give user control to the tangent plane estimation
         //!
         PONCA_MULTIARCH inline FIT_RESULT computeCurvature(bool useNormal = false);
+        PONCA_MULTIARCH inline FIT_RESULT computeUq(bool useNormal);
 
     protected:
         //! \brief Compute a tangent plane basis

@@ -14,6 +14,12 @@ namespace Ponca {
 
     template<class DataPoint, class _WFunctor, int DiffType, typename T>
     void
+    CurvatureEstimatorBase<DataPoint, _WFunctor, DiffType, T>::setUqValue(Eigen::Matrix<Scalar,3,3> Uq){
+      m_Uq = Uq;
+    }
+
+    template<class DataPoint, class _WFunctor, int DiffType, typename T>
+    void
     CurvatureEstimatorBase<DataPoint, _WFunctor, DiffType, T>::setCurvatureValues(
             Scalar kmin, Scalar kmax, const VectorType &vmin, const VectorType &vmax) {
         if(kmin <= kmax) {

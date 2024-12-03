@@ -7,6 +7,7 @@
 #pragma once
 
 #include "./defines.h"
+#include "Ponca/src/Common/defines.h"
 
 #include <Eigen/Eigenvalues>
 #include <Eigen/Core>
@@ -31,6 +32,8 @@ namespace Ponca
         };
 
     private:
+        Eigen::Matrix<Scalar,3,3>  m_Uq{};
+
         /// \brief Minimal principal curvature
         Scalar m_kmin {0},
         /// \brief Maximal principal curvature
@@ -61,6 +64,9 @@ namespace Ponca
         //! \brief Returns an estimate of the maximal principal curvature value
         PONCA_MULTIARCH inline Scalar kmax() const { return m_kmax; }
 
+        //! \brief Returns an estimate of Uq
+        PONCA_MULTIARCH inline Eigen::Matrix<Scalar, 3, 3> Uq() const { return m_Uq; }
+
         //! \brief Returns an estimate of the minimal principal curvature direction
         PONCA_MULTIARCH inline VectorType kminDirection() const { return m_vmin; }
 
@@ -73,6 +79,7 @@ namespace Ponca
         //! \brief Returns an estimate of the Gaussian curvature
         PONCA_MULTIARCH inline Scalar GaussianCurvature() const { return m_kmin * m_kmax;}
 
+
     protected:
         /// \brief Set curvature values. To be called in finalize() by child classes
         ///
@@ -81,6 +88,9 @@ namespace Ponca
         /// \f$ k_{\min} <= k_{\max} \f$.
         ///
         PONCA_MULTIARCH inline void setCurvatureValues(Scalar kmin, Scalar kmax, const VectorType& vmin, const VectorType& vmax);
+
+        //! \brief Returns the matrix Uq of the estimated algebraic ellipsoid
+        PONCA_MULTIARCH inline void setUqValue(Eigen::Matrix<Scalar,3,3> Uq);
     };
 
 } //namespace Ponca
