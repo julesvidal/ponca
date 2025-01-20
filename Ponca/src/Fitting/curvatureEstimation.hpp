@@ -16,9 +16,10 @@ FIT_RESULT NormalDerivativesCurvatureEstimator<DataPoint, _WFunctor, DiffType, T
 {
 
     Mat33 U = Mat33::Zero();
-    U.col(0)[0] = Base::kmin();
-    U.col(1)[1] = Base::kmax();
-    U.col(2)[2] = 1;
+    double k = Base::kmin()/2 + Base::kmax()/2;
+    U.col(0)[0] = Base::kmin()/2;
+    U.col(1)[1] = Base::kmax()/2;
+    U.col(2)[2] = k;
 
 
     Mat33 R;
@@ -43,7 +44,7 @@ FIT_RESULT NormalDerivativesCurvatureEstimator<DataPoint, _WFunctor, DiffType, T
       // std::cout<<" flipping v1 "<<std::endl;
     }
 
-    U = R.transpose()*U*R;
+    U = R*U*R.transpose();
 
     Base::setUqValue(U);
 
